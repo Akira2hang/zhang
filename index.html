@@ -167,27 +167,28 @@
   const modalRestart = document.getElementById('modalRestart');
 
   const BASE_FONT = 24;
-  const SHRINK = 0.78;      // "是"每次点击缩小到 78%
+  const SHRINK = 0.85;      // "是"前几次点击的缩小系数
   const GROW = 1.22;        // "不是"每次点击放大到 122%
   const MAX_FONT = 72;      // "不是"最大字号
-  const RUNAWAY_FONT = 13;  // "是"缩小到该字号以下时开始乱跑
-  const RUN_MIN_FONT = 8;   // 乱跑时"是"的字号下限(不再直接消失)
+  const DART_AFTER = 5;     // 前 5 次点击正常缩小,之后每点一次乱跑一次
+  const RUN_FONT = 11;      // 乱跑时"是"的字号下限(保持可点击)
+  const RUN_PAD_Y = 8;
+  const RUN_PAD_X = 24;
   const HINTS = [
     '真的吗？再想想… 🤔',
     '你确定？仔细看看 👀',
     '最后一次机会了！',
-    '其实只有"不是"能点哦 😏',
+    '手要稳一点哦 🎯',
   ];
   const RUNAWAY_HINTS = [
-    '哎呀，它跑掉了！😝',
-    '快来抓我呀～',
+    '哎呀，跑掉了！😝',
+    '再来，你抓不到～',
     '点在空气上好玩吗？',
     '追不上吧！',
   ];
 
   let clicks = 0;
   let running = false;
-  let runTimer = null;   // 乱跑模式下的自动移动定时器
 
   function setSize(btn, fontPx, padY, padX) {
     btn.style.fontSize = fontPx + 'px';
@@ -207,27 +208,18 @@
   btnYes.addEventListener('click', () => {
     clicks += 1;
 
-    // "是"：越变越小;小到一定程度开始乱跑,不再直接消失
-    const yesFont = Math.max(BASE_FONT * Math.pow(SHRINK, clicks), RUN_MIN_FONT);
-    const yesPadY = Math.max(14 * Math.pow(SHRINK, clicks), 3);
-    const yesPadX = Math.max(48 * Math.pow(SHRINK, clicks), 8);
+    // "是"：前 DART_AFTER 次点击正常缩小(仍可点击);
+    // 之后每次点击都跳到随机位置跑一次,不自动乱跑
+    const yesFont = Math.max(BASE_FONT * Math.pow(SHRINK, clicks), RUN_FONT);
+    const yesPadY = Math.max(14 * Math.pow(SHRINK, clicks), RUN_PAD_Y);
+    const yesPadX = Math.max(48 * Math.pow(SHRINK, clicks), RUN_PAD_X);
     setSize(btnYes, yesFont, yesPadY, yesPadX);
 
-    if (!running && yesFont <= RUNAWAY_FONT) {
+    if (!running && clicks > DART_AFTER) {
       running = true;
       btnYes.style.position = 'fixed';
       btnYes.style.zIndex = '50';
       btnYes.style.margin = '0';
-      dartAway(btnYes);
-      // 进入乱跑模式:持续自动移动,直到点"不是"才停下
-      let dartCount = 0;
-      runTimer = setInterval(() => {
-        dartAway(btnYes);
-        dartCount += 1;
-        if (dartCount % 4 === 0) {
-          hint.textContent = RUNAWAY_HINTS[Math.floor(Math.random() * RUNAWAY_HINTS.length)];
-        }
-      }, 350);
     }
     if (running) {
       dartAway(btnYes);
@@ -244,7 +236,6 @@
   });
 
   btnNo.addEventListener('click', () => {
-    if (runTimer) clearInterval(runTimer);
     modal.hidden = false;
   });
 
