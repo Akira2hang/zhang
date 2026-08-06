@@ -187,6 +187,7 @@
 
   let clicks = 0;
   let running = false;
+  let runTimer = null;   // 乱跑模式下的自动移动定时器
 
   function setSize(btn, fontPx, padY, padX) {
     btn.style.fontSize = fontPx + 'px';
@@ -217,6 +218,16 @@
       btnYes.style.position = 'fixed';
       btnYes.style.zIndex = '50';
       btnYes.style.margin = '0';
+      dartAway(btnYes);
+      // 进入乱跑模式:持续自动移动,直到点"不是"才停下
+      let dartCount = 0;
+      runTimer = setInterval(() => {
+        dartAway(btnYes);
+        dartCount += 1;
+        if (dartCount % 4 === 0) {
+          hint.textContent = RUNAWAY_HINTS[Math.floor(Math.random() * RUNAWAY_HINTS.length)];
+        }
+      }, 350);
     }
     if (running) {
       dartAway(btnYes);
@@ -233,6 +244,7 @@
   });
 
   btnNo.addEventListener('click', () => {
+    if (runTimer) clearInterval(runTimer);
     modal.hidden = false;
   });
 
