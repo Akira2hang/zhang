@@ -28,6 +28,7 @@
     width: 100%;
     padding: 48px 40px 44px;
     text-align: center;
+    position: relative;   /* 作为"是"乱跑的定位基准 */
   }
   .question {
     color: #ffffff;
@@ -77,6 +78,14 @@
     background: linear-gradient(135deg, #ff9a9e, #fecfef);
     color: #7c2d3a;
     padding: 14px 48px;
+  }
+  /* 乱跑落点闪光,方便在手机屏上定位 */
+  .btn.darting {
+    animation: dart-pop 0.35s ease;
+  }
+  @keyframes dart-pop {
+    0% { transform: scale(1.35); box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.75); }
+    100% { transform: scale(1); }
   }
 
   /* 弹窗 */
@@ -195,14 +204,19 @@
     btn.style.padding = padY + 'px ' + padX + 'px';
   }
 
-  // 把按钮丢到屏幕上的随机位置(每点一次跑一次)
+  // 把按钮丢到卡片内的随机位置(每点一次跑一次),并闪一下方便定位
   function dartAway(btn) {
+    const card = btn.closest('.card');
+    const rect = card.getBoundingClientRect();
     const w = btn.offsetWidth || 60;
     const h = btn.offsetHeight || 36;
-    const maxX = Math.max(window.innerWidth - w, 0);
-    const maxY = Math.max(window.innerHeight - h, 0);
+    const maxX = Math.max(rect.width - w, 0);
+    const maxY = Math.max(rect.height - h, 0);
     btn.style.left = Math.random() * maxX + 'px';
     btn.style.top = Math.random() * maxY + 'px';
+    btn.classList.remove('darting');
+    void btn.offsetWidth;   // 强制重排,让闪光动画每次都能重新播放
+    btn.classList.add('darting');
   }
 
   btnYes.addEventListener('click', () => {
@@ -217,7 +231,7 @@
 
     if (!running && clicks > DART_AFTER) {
       running = true;
-      btnYes.style.position = 'fixed';
+      btnYes.style.position = 'absolute';   // 相对卡片定位,不乱跑出卡片
       btnYes.style.zIndex = '50';
       btnYes.style.margin = '0';
     }
