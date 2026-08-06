@@ -62,7 +62,8 @@
     border-radius: 999px;
     box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
     transition: font-size 0.25s ease, padding 0.25s ease,
-                opacity 0.25s ease, transform 0.15s ease;
+                opacity 0.25s ease, transform 0.15s ease,
+                left 0.2s ease, top 0.2s ease;
     white-space: nowrap;
     max-width: 90vw;
   }
@@ -166,37 +167,60 @@
   const modalRestart = document.getElementById('modalRestart');
 
   const BASE_FONT = 24;
-  const SHRINK = 0.78;   // "是"每次点击缩小到 78%
-  const GROW = 1.22;     // "不是"每次点击放大到 122%
-  const MAX_FONT = 72;   // "不是"最大字号
-  const MIN_FONT = 6;    // "是"小于该字号即隐藏
+  const SHRINK = 0.78;      // "是"每次点击缩小到 78%
+  const GROW = 1.22;        // "不是"每次点击放大到 122%
+  const MAX_FONT = 72;      // "不是"最大字号
+  const RUNAWAY_FONT = 13;  // "是"缩小到该字号以下时开始乱跑
+  const RUN_MIN_FONT = 8;   // 乱跑时"是"的字号下限(不再直接消失)
   const HINTS = [
     '真的吗？再想想… 🤔',
     '你确定？仔细看看 👀',
     '最后一次机会了！',
     '其实只有"不是"能点哦 😏',
-    '放弃挣扎吧！',
+  ];
+  const RUNAWAY_HINTS = [
+    '哎呀，它跑掉了！😝',
+    '快来抓我呀～',
+    '点在空气上好玩吗？',
+    '追不上吧！',
   ];
 
   let clicks = 0;
+  let running = false;
 
   function setSize(btn, fontPx, padY, padX) {
     btn.style.fontSize = fontPx + 'px';
     btn.style.padding = padY + 'px ' + padX + 'px';
   }
 
+  // 把按钮丢到屏幕上的随机位置(每点一次跑一次)
+  function dartAway(btn) {
+    const w = btn.offsetWidth || 60;
+    const h = btn.offsetHeight || 36;
+    const maxX = Math.max(window.innerWidth - w, 0);
+    const maxY = Math.max(window.innerHeight - h, 0);
+    btn.style.left = Math.random() * maxX + 'px';
+    btn.style.top = Math.random() * maxY + 'px';
+  }
+
   btnYes.addEventListener('click', () => {
     clicks += 1;
 
-    // "是"：越变越小
-    const yesFont = Math.max(BASE_FONT * Math.pow(SHRINK, clicks), MIN_FONT);
+    // "是"：越变越小;小到一定程度开始乱跑,不再直接消失
+    const yesFont = Math.max(BASE_FONT * Math.pow(SHRINK, clicks), RUN_MIN_FONT);
     const yesPadY = Math.max(14 * Math.pow(SHRINK, clicks), 3);
     const yesPadX = Math.max(48 * Math.pow(SHRINK, clicks), 8);
     setSize(btnYes, yesFont, yesPadY, yesPadX);
 
-    if (yesFont <= MIN_FONT) {
-      btnYes.style.display = 'none';
-      hint.textContent = '"是"已经消失了，只能选"不是"了 😏';
+    if (!running && yesFont <= RUNAWAY_FONT) {
+      running = true;
+      btnYes.style.position = 'fixed';
+      btnYes.style.zIndex = '50';
+      btnYes.style.margin = '0';
+    }
+    if (running) {
+      dartAway(btnYes);
+      hint.textContent = RUNAWAY_HINTS[Math.floor(Math.random() * RUNAWAY_HINTS.length)];
     } else {
       hint.textContent = HINTS[Math.min(clicks - 1, HINTS.length - 1)];
     }
